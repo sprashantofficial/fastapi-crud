@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from fastapi import Depends, FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException, Query
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -24,8 +24,8 @@ def home():
 
 
 @app.get("/tasks", response_model=list[Task])
-def list_tasks(db: DB):
-    return db.scalars(select(TaskRow).order_by(TaskRow.id)).all()
+def list_tasks(db: DB, skip: int = Query(0, ge=0), limit: int = Query(50, ge=1, le=100)):
+    return db.scalars(select(TaskRow).order_by(TaskRow.id).offset(skip).limit(limit)).all()
 
 
 @app.get("/tasks/{task_id}", response_model=Task)

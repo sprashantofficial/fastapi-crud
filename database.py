@@ -1,5 +1,6 @@
 from datetime import datetime, timezone
 
+from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import DateTime, String, create_engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, sessionmaker
 
@@ -26,3 +27,15 @@ class TaskRow(Base):
     completed: Mapped[bool] = mapped_column(default=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+
+
+# What the API accepts and returns
+class TaskCreate(BaseModel):
+    title: str = Field(min_length=1, max_length=200)
+    completed: bool = False
+
+
+class Task(TaskCreate):
+    model_config = ConfigDict(from_attributes=True)  # can be built from a TaskRow
+    id: int
+    created_at: datetime

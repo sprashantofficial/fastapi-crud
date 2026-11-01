@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from fastapi import Depends, FastAPI
+from fastapi import Depends, FastAPI, HTTPException
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -9,6 +9,13 @@ from database import Base, Task, TaskCreate, TaskRow, TaskUpdate, engine, get_db
 Base.metadata.create_all(engine)  # creates the tasks table if it doesn't exist yet
 app = FastAPI(title="Task API")
 DB = Annotated[Session, Depends(get_db)]
+
+
+def find_task(db: Session, task_id: int) -> TaskRow:
+    task = db.get(TaskRow, task_id)
+    if task is None:
+        raise HTTPException(404, f"Task {task_id} not found")
+    return task
 
 
 @app.get("/")
@@ -23,7 +30,7 @@ def list_tasks(db: DB):
 
 @app.get("/tasks/{task_id}", response_model=Task)
 def get_task(task_id: int, db: DB):
-    return db.get(TaskRow, task_id)
+    return find_task(db, task_id)
 
 
 @app.post("/tasks", response_model=Task, status_code=201)
@@ -36,7 +43,7 @@ def create_task(data: TaskCreate, db: DB):
 
 @app.patch("/tasks/{task_id}", response_model=Task)
 def update_task(task_id: int, data: TaskUpdate, db: DB):
-    task = db.get(TaskRow, task_id)
+    task = find_task(db, task_id)
     for field, value in data.model_dump(exclude_unset=True).items():
         setattr(task, field, value)
     db.commit()
@@ -45,5 +52,5 @@ def update_task(task_id: int, data: TaskUpdate, db: DB):
 
 @app.delete("/tasks/{task_id}", status_code=204)
 def delete_task(task_id: int, db: DB):
-    db.delete(db.get(TaskRow, task_id))
+    db.delete(find_task(db, task_id))
     db.commit()

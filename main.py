@@ -4,7 +4,7 @@ from fastapi import Depends, FastAPI
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from database import Base, Task, TaskCreate, TaskRow, engine, get_db
+from database import Base, Task, TaskCreate, TaskRow, TaskUpdate, engine, get_db
 
 Base.metadata.create_all(engine)  # creates the tasks table if it doesn't exist yet
 app = FastAPI(title="Task API")
@@ -21,9 +21,29 @@ def list_tasks(db: DB):
     return db.scalars(select(TaskRow).order_by(TaskRow.id)).all()
 
 
+@app.get("/tasks/{task_id}", response_model=Task)
+def get_task(task_id: int, db: DB):
+    return db.get(TaskRow, task_id)
+
+
 @app.post("/tasks", response_model=Task, status_code=201)
 def create_task(data: TaskCreate, db: DB):
     task = TaskRow(**data.model_dump())
     db.add(task)
     db.commit()
     return task
+
+
+@app.patch("/tasks/{task_id}", response_model=Task)
+def update_task(task_id: int, data: TaskUpdate, db: DB):
+    task = db.get(TaskRow, task_id)
+    for field, value in data.model_dump(exclude_unset=True).items():
+        setattr(task, field, value)
+    db.commit()
+    return task
+
+
+@app.delete("/tasks/{task_id}", status_code=204)
+def delete_task(task_id: int, db: DB):
+    db.delete(db.get(TaskRow, task_id))
+    db.commit()

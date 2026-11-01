@@ -35,6 +35,11 @@ class TaskCreate(BaseModel):
     completed: bool = False
 
 
+class TaskUpdate(BaseModel):  # every field optional: send only what changed
+    title: str | None = Field(None, min_length=1, max_length=200)
+    completed: bool | None = None
+
+
 class Task(TaskCreate):
     model_config = ConfigDict(from_attributes=True)  # can be built from a TaskRow
     id: int

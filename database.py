@@ -1,11 +1,15 @@
+import os
 from datetime import datetime, timezone
 
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import DateTime, String, create_engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, sessionmaker
 
-DATABASE_URL = "sqlite:///./tasks.db"
-engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
+# A local SQLite file by default. In production, set DATABASE_URL to PostgreSQL.
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./tasks.db")
+is_sqlite = DATABASE_URL.startswith("sqlite")
+engine = create_engine(DATABASE_URL, pool_pre_ping=True,
+                       connect_args={"check_same_thread": False} if is_sqlite else {})
 SessionLocal = sessionmaker(engine, expire_on_commit=False)
 
 

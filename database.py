@@ -1,7 +1,7 @@
 import os
 from datetime import datetime, timezone
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 from sqlalchemy import DateTime, String, create_engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, sessionmaker
 
@@ -48,3 +48,8 @@ class Task(TaskCreate):
     model_config = ConfigDict(from_attributes=True)  # can be built from a TaskRow
     id: int
     created_at: datetime
+
+    @field_validator("created_at")
+    @classmethod
+    def as_utc(cls, value: datetime) -> datetime:  # SQLite forgets the time zone
+        return value.replace(tzinfo=timezone.utc) if value.tzinfo is None else value.astimezone(timezone.utc)

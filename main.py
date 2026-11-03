@@ -56,7 +56,7 @@ def create_task(data: TaskCreate, db: DB):
 @app.patch("/tasks/{task_id}", response_model=Task)
 def update_task(task_id: int, data: TaskUpdate, db: DB):
     task = find_task(db, task_id)
-    for field, value in data.model_dump(exclude_unset=True).items():
+    for field, value in data.model_dump(exclude_unset=True, exclude_none=True).items():
         setattr(task, field, value)
     db.commit()
     log.info("Updated task %s", task_id)

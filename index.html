@@ -42,8 +42,8 @@
         body: body && JSON.stringify(body),
       });
       if (!res.ok) {
-        const { detail } = await res.json();
-        throw new Error(typeof detail === "string" ? detail : "Please check what you typed.");
+        const { detail } = await res.json().catch(() => ({})); // a server crash (500) replies with plain text, not JSON
+        throw new Error(typeof detail === "string" ? detail : res.status === 422 ? "Please check what you typed." : `Server error (${res.status}). Check the terminal for details.`);
       }
       return res.status === 204 ? null : res.json();
     }
@@ -59,7 +59,7 @@
           tasks.length ? `${left} of ${tasks.length} left to do` : "No tasks yet. Add one above.";
         errorBox.classList.add("d-none");
       } catch (err) {
-        errorBox.textContent = err.message;
+        errorBox.textContent = err instanceof TypeError ? "Can't reach the server. Check that it's running." : err.message;
         errorBox.classList.remove("d-none");
       }
     }

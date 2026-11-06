@@ -1,8 +1,10 @@
 import logging
 import os
+from pathlib import Path
 from typing import Annotated
 
 from fastapi import Depends, FastAPI, HTTPException, Query
+from fastapi.responses import FileResponse
 from sqlalchemy import select, text
 from sqlalchemy.orm import Session
 
@@ -23,9 +25,9 @@ def find_task(db: Session, task_id: int) -> TaskRow:
     return task
 
 
-@app.get("/")
+@app.get("/", include_in_schema=False)
 def home():
-    return {"message": "Hello, World!"}
+    return FileResponse(Path(__file__).parent / "index.html")
 
 
 @app.get("/health")
